@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"github.com/shadowsocks/go-shadowsocks2/internal"
+	"go-ssclient/internal"
 )
 
 var (

@@ -1,10 +1,10 @@
-package main
+package shared
 
 import (
 	"net"
 
-	"github.com/shadowsocks/go-shadowsocks2/nfutil"
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"go-ssclient/nfutil"
+	"go-ssclient/socks"
 )
 
 func getOrigDst(c net.Conn, ipv6 bool) (socks.Addr, error) {

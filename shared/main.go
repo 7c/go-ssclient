@@ -1,4 +1,4 @@
-package main
+package shared
 
 import (
 	"crypto/rand"
@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/shadowsocks/go-shadowsocks2/core"
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"go-ssclient/core"
+	"go-ssclient/socks"
 )
 
 var config struct {
@@ -24,7 +24,7 @@ var config struct {
 	TCPCork    bool
 }
 
-func main() {
+func main2() {
 
 	var flags struct {
 		Client     string
@@ -52,12 +52,15 @@ func main() {
 	flag.StringVar(&flags.Password, "password", "", "password")
 	flag.StringVar(&flags.Server, "s", "", "server listen address or url")
 	flag.StringVar(&flags.Client, "c", "", "client connect address or url")
+
+	// client
 	flag.StringVar(&flags.Socks, "socks", "", "(client-only) SOCKS listen address")
 	flag.BoolVar(&flags.UDPSocks, "u", false, "(client-only) Enable UDP support for SOCKS")
 	flag.StringVar(&flags.RedirTCP, "redir", "", "(client-only) redirect TCP from this address")
 	flag.StringVar(&flags.RedirTCP6, "redir6", "", "(client-only) redirect TCP IPv6 from this address")
 	flag.StringVar(&flags.TCPTun, "tcptun", "", "(client-only) TCP tunnel (laddr1=raddr1,laddr2=raddr2,...)")
 	flag.StringVar(&flags.UDPTun, "udptun", "", "(client-only) UDP tunnel (laddr1=raddr1,laddr2=raddr2,...)")
+
 	flag.StringVar(&flags.Plugin, "plugin", "", "Enable SIP003 plugin. (e.g., v2ray-plugin)")
 	flag.StringVar(&flags.PluginOpts, "plugin-opts", "", "Set SIP003 plugin options. (e.g., \"server;tls;host=mydomain.me\")")
 	flag.BoolVar(&flags.UDP, "udp", false, "(server-only) enable UDP support")
@@ -133,10 +136,10 @@ func main() {
 
 		if flags.Socks != "" {
 			socks.UDPEnabled = flags.UDPSocks
-			go socksLocal(flags.Socks, addr, ciph.StreamConn)
-			if flags.UDPSocks {
-				go udpSocksLocal(flags.Socks, udpAddr, ciph.PacketConn)
-			}
+			// go shared.SocksLocal(flags.Socks, addr, ciph.StreamConn)
+			// if flags.UDPSocks {
+			// 	go udpSocksLocal(flags.Socks, udpAddr, ciph.PacketConn)
+			// }
 		}
 
 		if flags.RedirTCP != "" {

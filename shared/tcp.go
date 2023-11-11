@@ -1,7 +1,8 @@
-package main
+package shared
 
 import (
 	"bufio"
+	"context"
 	"errors"
 	"io"
 	"io/ioutil"
@@ -10,13 +11,18 @@ import (
 	"sync"
 	"time"
 
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"go-ssclient/global"
+	"go-ssclient/socks"
+
+	"github.com/fatih/color"
 )
 
 // Create a SOCKS server listening on addr and proxy to server.
-func socksLocal(addr, server string, shadow func(net.Conn) net.Conn) {
-	logf("SOCKS proxy %s <-> %s", addr, server)
-	tcpLocal(addr, server, shadow, func(c net.Conn) (socks.Addr, error) { return socks.Handshake(c) })
+func SocksLocal(ctx context.Context, socksListenAddr, server string, shadow func(net.Conn) net.Conn, channels *global.SSClientChannels) {
+	logf("SOCKS5 proxy %s <-> %s", socksListenAddr, server)
+	TcpLocal(ctx, socksListenAddr, server, shadow,
+		func(c net.Conn) (socks.Addr, error) { return socks.Handshake(c) },
+		channels)
 }
 
 // Create a TCP tunnel from addr to target via server.
@@ -27,35 +33,59 @@ func tcpTun(addr, server, target string, shadow func(net.Conn) net.Conn) {
 		return
 	}
 	logf("TCP tunnel %s <-> %s <-> %s", addr, server, target)
-	tcpLocal(addr, server, shadow, func(net.Conn) (socks.Addr, error) { return tgt, nil })
+	TcpLocal(context.Background(), addr, server, shadow, func(net.Conn) (socks.Addr, error) { return tgt, nil }, nil)
 }
 
 // Listen on addr and proxy to server to reach target from getAddr.
-func tcpLocal(addr, server string, shadow func(net.Conn) net.Conn, getAddr func(net.Conn) (socks.Addr, error)) {
+func TcpLocal(ctx context.Context, addr, server string, shadow func(net.Conn) net.Conn, getAddr func(net.Conn) (socks.Addr, error), channels *global.SSClientChannels) {
 	l, err := net.Listen("tcp", addr)
 	if err != nil {
+		channels.ChanError <- err
 		logf("failed to listen on %s: %v", addr, err)
 		return
 	}
 
+	go func() {
+		select {
+		case <-ctx.Done():
+			logf("tcp cancel received")
+			if err := l.Close(); err != nil {
+				logf("error closing listener: %v", err)
+			}
+		}
+
+	}()
+
+	channels.ChanTCPReady <- true
+
 	for {
 		c, err := l.Accept()
 		if err != nil {
-			logf("failed to accept: %s", err)
-			continue
+			select {
+			case <-ctx.Done():
+				logf("tcp listener closed due to context cancellation")
+				return // Exit the function when context is done
+			default:
+				logf("failed to accept: %s", err)
+				continue
+			}
 		}
+
+		logf(color.YellowString("accepted new peer %s", c.RemoteAddr()))
 
 		go func() {
 			defer c.Close()
-			tgt, err := getAddr(c)
+			targetAddr, err := getAddr(c)
+			logf("targetAddr:%s %s", targetAddr)
 			if err != nil {
-
 				// UDP: keep the connection until disconnect then free the UDP socket
 				if err == socks.InfoUDPAssociate {
 					buf := make([]byte, 1)
 					// block here
 					for {
+						logf("...")
 						_, err := c.Read(buf)
+						logf("... %s", err)
 						if err, ok := err.(net.Error); ok && err.Timeout() {
 							continue
 						}
@@ -67,24 +97,27 @@ func tcpLocal(addr, server string, shadow func(net.Conn) net.Conn, getAddr func(
 				logf("failed to get target address: %v", err)
 				return
 			}
+			logf(color.BlueString("targetAddr :%s", targetAddr))
 
-			rc, err := net.Dial("tcp", server)
+			logf(color.BlueString("net.Dialing..."))
+			rc, err := net.DialTimeout("tcp", server, channels.Timeout)
 			if err != nil {
 				logf("failed to connect to server %v: %v", server, err)
 				return
 			}
+			logf(color.BlueString("net.Dialed: %s", rc))
 			defer rc.Close()
 			if config.TCPCork {
 				rc = timedCork(rc, 10*time.Millisecond, 1280)
 			}
 			rc = shadow(rc)
 
-			if _, err = rc.Write(tgt); err != nil {
+			if _, err = rc.Write(targetAddr); err != nil {
 				logf("failed to send target address: %v", err)
 				return
 			}
 
-			logf("proxy %s <-> %s <-> %s", c.RemoteAddr(), server, tgt)
+			logf("proxy %s <-> %s <-> %s", c.RemoteAddr(), server, targetAddr)
 			if err = relay(rc, c); err != nil {
 				logf("relay error: %v", err)
 			}

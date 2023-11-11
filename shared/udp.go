@@ -1,12 +1,14 @@
-package main
+package shared
 
 import (
+	"context"
 	"fmt"
 	"net"
 	"sync"
 	"time"
 
-	"github.com/shadowsocks/go-shadowsocks2/socks"
+	"go-ssclient/global"
+	"go-ssclient/socks"
 )
 
 type mode int
@@ -74,19 +76,31 @@ func udpLocal(laddr, server, target string, shadow func(net.PacketConn) net.Pack
 }
 
 // Listen on laddr for Socks5 UDP packets, encrypt and send to server to reach target.
-func udpSocksLocal(laddr, server string, shadow func(net.PacketConn) net.PacketConn) {
+func UdpSocksLocal(ctx context.Context, laddr, server string, shadow func(net.PacketConn) net.PacketConn, channels *global.SSClientChannels) {
 	srvAddr, err := net.ResolveUDPAddr("udp", server)
 	if err != nil {
+		channels.ChanError <- err
 		logf("UDP server address error: %v", err)
 		return
 	}
 
 	c, err := net.ListenPacket("udp", laddr)
 	if err != nil {
+		channels.ChanError <- err
 		logf("UDP local listen error: %v", err)
 		return
 	}
 	defer c.Close()
+	channels.ChanUDPReady <- true
+	go func() {
+		select {
+		case <-ctx.Done():
+			if ok := c.Close(); ok != nil {
+				logf("could not close udp listener")
+			}
+			logf("udp cancel received")
+		}
+	}()
 
 	nm := newNATmap(config.UDPTimeout)
 	buf := make([]byte, udpBufSize)
@@ -94,8 +108,14 @@ func udpSocksLocal(laddr, server string, shadow func(net.PacketConn) net.PacketC
 	for {
 		n, raddr, err := c.ReadFrom(buf)
 		if err != nil {
-			logf("UDP local read error: %v", err)
-			continue
+			select {
+			case <-ctx.Done():
+				logf("udp listener closed due to context cancellation")
+				return
+			default:
+				logf("UDP local read error: %v", err)
+				continue
+			}
 		}
 
 		pc := nm.Get(raddr.String())
