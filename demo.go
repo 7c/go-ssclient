@@ -1,10 +1,11 @@
 package main
 
 import (
-	"go-ssclient/shared"
 	"log"
 	"os"
 	"time"
+
+	"github.com/7c/go-ssclient/shared"
 
 	"github.com/fatih/color"
 )

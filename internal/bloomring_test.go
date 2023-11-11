@@ -5,7 +5,7 @@ import (
 	"os"
 	"testing"
 
-	"go-ssclient/internal"
+	"github.com/7c/go-ssclient/internal"
 )
 
 var (

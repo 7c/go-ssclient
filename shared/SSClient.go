@@ -3,15 +3,16 @@ package shared
 import (
 	"context"
 	"fmt"
-	"go-ssclient/core"
-	"go-ssclient/global"
-	"go-ssclient/socks"
 	"log"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/7c/go-ssclient/core"
+	"github.com/7c/go-ssclient/global"
+	"github.com/7c/go-ssclient/socks"
 
 	"github.com/fatih/color"
 	"github.com/go-resty/resty/v2"

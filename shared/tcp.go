@@ -11,8 +11,8 @@ import (
 	"sync"
 	"time"
 
-	"go-ssclient/global"
-	"go-ssclient/socks"
+	"github.com/7c/go-ssclient/global"
+	"github.com/7c/go-ssclient/socks"
 
 	"github.com/fatih/color"
 )

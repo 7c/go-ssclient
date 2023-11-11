@@ -14,8 +14,8 @@ import (
 	"syscall"
 	"time"
 
-	"go-ssclient/core"
-	"go-ssclient/socks"
+	"github.com/7c/go-ssclient/core"
+	"github.com/7c/go-ssclient/socks"
 )
 
 var config struct {

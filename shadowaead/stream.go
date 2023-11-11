@@ -7,7 +7,7 @@ import (
 	"io"
 	"net"
 
-	"go-ssclient/internal"
+	"github.com/7c/go-ssclient/internal"
 )
 
 // payloadSizeMask is the maximum size of payload in bytes.

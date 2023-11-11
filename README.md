@@ -4,6 +4,10 @@ This package is basic wrapper around a version of https://godoc.org/github.com/s
 
 Connection Error Handling, Timeout Handling has been added with context and go-channels.
 
+# Install
+`go get github.com/7c/go-ssclient`
+
+# Usage
 ## tcp/udp SSClient with socks5 listener
 ```
 ssc, err := shared.NewSSClient("ss://AEAD_CHACHA20_POLY1305:HwhYX94emfSVhMD@217.244.79.108:903", true, time.Second*15)

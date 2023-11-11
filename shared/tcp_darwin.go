@@ -4,8 +4,8 @@ import (
 	"context"
 	"net"
 
-	"go-ssclient/pfutil"
-	"go-ssclient/socks"
+	"github.com/7c/go-ssclient/pfutil"
+	"github.com/7c/go-ssclient/socks"
 )
 
 func natLookup(c net.Conn) (socks.Addr, error) {

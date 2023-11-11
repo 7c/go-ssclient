@@ -7,7 +7,7 @@ import (
 	"net"
 	"sync"
 
-	"go-ssclient/internal"
+	"github.com/7c/go-ssclient/internal"
 )
 
 // ErrShortPacket means that the packet is too short for a valid encrypted packet.

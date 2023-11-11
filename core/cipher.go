@@ -7,7 +7,7 @@ import (
 	"sort"
 	"strings"
 
-	"go-ssclient/shadowaead"
+	"github.com/7c/go-ssclient/shadowaead"
 )
 
 type Cipher interface {
