@@ -37,16 +37,15 @@ func (ssc *SSClient) Disconnect() {
 	// log.Printf("SSClient disconnected")
 }
 
-func (ssc *SSClient) TestSocks5(socksListenAddr, proto string) (bool, error) {
-	logf("TestSocks5 '%s','%s'", proto, socksListenAddr)
+func (ssc *SSClient) GetRestyWithSocks5(socksListenAddr, proto string) (*resty.Client, error) {
 	directDialer := &net.Dialer{
 		Timeout:   30 * time.Second,
 		KeepAlive: 30 * time.Second,
 	}
-	// var dialContext proxy.DialContext
+
 	dialer, err := proxy.SOCKS5(proto, socksListenAddr, nil, directDialer)
 	if err != nil {
-		return false, fmt.Errorf("could not parse proxy address")
+		return nil, fmt.Errorf("could not parse proxy address")
 	}
 	transport := &http.Transport{
 		DialContext: dialer.(proxy.ContextDialer).DialContext,
@@ -54,6 +53,15 @@ func (ssc *SSClient) TestSocks5(socksListenAddr, proto string) (bool, error) {
 	// xhr request to verify the address
 	client := resty.New()
 	client.SetTransport(transport)
+	return client, nil
+}
+
+func (ssc *SSClient) TestSocks5(socksListenAddr, proto string) (bool, error) {
+	logf("TestSocks5 '%s','%s'", proto, socksListenAddr)
+	client, err := ssc.GetRestyWithSocks5(socksListenAddr, proto)
+	if err != nil {
+		return false, err
+	}
 	resp, err := client.R().Get("https://ip4.ip8.com")
 	if err != nil {
 		return false, fmt.Errorf("xhr error:%s", err)
