@@ -3,7 +3,6 @@ package shared
 import (
 	"context"
 	"fmt"
-	"log"
 	"net"
 	"net/http"
 	"net/url"
@@ -31,10 +30,8 @@ type SSClient struct {
 }
 
 func (ssc *SSClient) Disconnect() {
-	log.Printf("SSClient disconnect signal received\n")
+	logf("SSClient disconnect signal received")
 	ssc.cancel()
-	// <-ssc.Ctx.Done()
-	// log.Printf("SSClient disconnected")
 }
 
 func (ssc *SSClient) GetRestyWithSocks5(socksListenAddr, proto string) (*resty.Client, error) {

@@ -3,8 +3,8 @@ package shared
 import (
 	"net"
 
-	"go-ssclient/nfutil"
-	"go-ssclient/socks"
+	"github.com/7c/go-ssclient/nfutil"
+	"github.com/7c/go-ssclient/socks"
 )
 
 func getOrigDst(c net.Conn, ipv6 bool) (socks.Addr, error) {
@@ -18,11 +18,11 @@ func getOrigDst(c net.Conn, ipv6 bool) (socks.Addr, error) {
 // Listen on addr for netfilter redirected TCP connections
 func redirLocal(addr, server string, shadow func(net.Conn) net.Conn) {
 	logf("TCP redirect %s <-> %s", addr, server)
-	tcpLocal(addr, server, shadow, func(c net.Conn) (socks.Addr, error) { return getOrigDst(c, false) })
+	TcpLocal(addr, server, shadow, func(c net.Conn) (socks.Addr, error) { return getOrigDst(c, false) })
 }
 
 // Listen on addr for netfilter redirected TCP IPv6 connections.
 func redir6Local(addr, server string, shadow func(net.Conn) net.Conn) {
 	logf("TCP6 redirect %s <-> %s", addr, server)
-	tcpLocal(addr, server, shadow, func(c net.Conn) (socks.Addr, error) { return getOrigDst(c, true) })
+	TcpLocal(addr, server, shadow, func(c net.Conn) (socks.Addr, error) { return getOrigDst(c, true) })
 }
